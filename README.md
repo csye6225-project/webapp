@@ -1,2 +1,12 @@
 # webapp
-add a springboot demo
+***
+
+##This project is finished by
+- Java
+- Springboot
+- Hibernate
+- MySQL
+
+##Start the application with
+```DemoApplication.java```
+
