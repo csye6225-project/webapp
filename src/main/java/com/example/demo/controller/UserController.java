@@ -3,6 +3,7 @@ package com.example.demo.controller;
 import com.example.demo.dao.UserDAO;
 import com.example.demo.model.User;
 import com.example.demo.util.BCrypt;
+import com.example.demo.util.CheckToken;
 import com.example.demo.util.EmailValidator;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -31,78 +32,50 @@ public class UserController {
     }
 
     @PostMapping(value="/v1/user", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) {
+    public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) throws IOException {
         if(userDAO.get(user.getUsername()) != null || !EmailValidator.isEmail(user.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-
-        System.out.println(user);
-
         User newUser = userDAO.create(user.getFirst_name(),user.getLast_name(),user.getPassword(),user.getUsername());
-
+        System.out.println(newUser.getUsername());
         Map<String, Object> responseMap = showUserInfo(newUser);
-
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(responseMap);
+        return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping(value="/v1/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> showUser(@RequestHeader(value="Authorization") String token, UserDAO userDAO) throws IOException {
-        if (StringUtils.isEmpty(token)) {
-            System.out.println("No token");
+        User user = new CheckToken().checkToken(token, userDAO);
+        if (user == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
-        String[] userAndPass = new String(new BASE64Decoder().decodeBuffer(token.split(" ")[1])).split(":");
-        if (userAndPass.length < 2) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
-        User user = userDAO.get(userAndPass[0]);
-        if (user == null || !BCrypt.checkpw(userAndPass[1],user.getPassword())) {
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
-        }
-
         Map<String, Object> responseMap = showUserInfo(user);
-
         return ResponseEntity.status(HttpStatus.OK).body(responseMap);
     }
 
     @PutMapping(value="/v1/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateUser(@RequestHeader(value="Authorization") String token, @RequestBody Map<String, Object> userMap,
                                         UserDAO userDAO) throws IOException{
-//        System.out.println(userMap.get("first_name"));
-//        System.out.println(userMap.get("last_name"));
-//        System.out.println(userMap.get("password"));
-//        System.out.println(userMap.get("username"));
-
         if (StringUtils.isEmpty(token)) {
-            System.out.println("1");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         String[] userAndPass = new String(new BASE64Decoder().decodeBuffer(token.split(" ")[1])).split(":");
         if (userAndPass.length < 2) {
-            System.out.println("2");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         String name = userMap.get("username").toString();
-        System.out.println(name);
-        System.out.println(userAndPass[0]);
         if (!name.equals(userAndPass[0])) {
-            System.out.println("3");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         User user1 = userDAO.get(name);
         if (user1 == null || !BCrypt.checkpw(userAndPass[1],user1.getPassword())) {
-            System.out.println("4");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
         if (userMap.size() != 4 || userMap.get("first_name") == null ||
                 userMap.get("last_name") == null || userMap.get("password") == null) {
-            System.out.println("5");
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
