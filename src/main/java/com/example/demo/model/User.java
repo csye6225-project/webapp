@@ -7,12 +7,17 @@ import javax.persistence.*;
 public class User {
     @Id
     private String id;
+    @Column(name="first_name")
     private String first_name;
+    @Column(name="last_name")
     private String last_name;
+    @Column(name="password")
     private String password;
     @Column(name="username", unique = true)
     private String username;
+    @Column(name="account_created")
     private String account_created;
+    @Column(name="account_updated")
     private String account_updated;
 
     public User() {

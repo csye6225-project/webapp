@@ -3,16 +3,15 @@ package com.example.demo.dao;
 import com.example.demo.model.User;
 import com.example.demo.util.BCrypt;
 import org.hibernate.query.Query;
-import org.springframework.stereotype.Component;
-
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.UUID;
 
-@Component
+
 public class UserDAO extends DAO{
+
     public User create(String fname, String lname, String pw, String uname) {
         try {
             beginTransaction();
