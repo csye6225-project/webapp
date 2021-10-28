@@ -1,24 +1,36 @@
 package com.example.demo.dao;
 
+import com.example.demo.util.HibernateUtil;
 import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.cfg.Configuration;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
+import javax.xml.ws.soap.Addressing;
+import java.io.IOException;
 import java.util.logging.Logger;
 
 @Repository
 public class DAO {
     private static final Logger log = Logger.getAnonymousLogger();
     private static final ThreadLocal session = new ThreadLocal();
-    private static final SessionFactory sessionFactory =
-            new Configuration().configure("hibernate.cfg.xml").buildSessionFactory();
+    @Autowired
+
+    private static SessionFactory sessionFactory;
+
+    static {
+        try {
+            sessionFactory = HibernateUtil.buildSessionFactory();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
 
     protected DAO() {
 
     }
 
-    public static Session getSession() {
+    public static Session getSession(){
         Session session = (Session) DAO.session.get();
         if(session == null) {
             session = sessionFactory.openSession();
