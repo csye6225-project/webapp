@@ -1,0 +1,21 @@
+version: 0.0
+os: linux
+files:
+  - source: ./target/demo-0.0.1-SNAPSHOT.jar
+    destination: /home/ubuntu/app
+hooks:
+  ApplicationStop:
+    - location: scripts/stopTask.sh
+      timeout: 180
+      runas: ubuntu
+  BeforeInstall:
+    - location: scripts/beforeInstall.sh
+      timeout: 180
+      runas: ubuntu
+  AfterInstall:
+    - location: scripts/afterInstall.sh
+      timeout: 180
+      runas: ubuntu
+  ApplicationStart:
+    - location: scripts/applicationStart.sh
+      runas: ubuntu
