@@ -10,9 +10,9 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
-import sun.misc.BASE64Decoder;
 
 import java.io.IOException;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -59,7 +59,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        String[] userAndPass = new String(new BASE64Decoder().decodeBuffer(token.split(" ")[1])).split(":");
+        String[] userAndPass = new String(Base64.getDecoder().decode(token.split(" ")[1])).split(":");
         if (userAndPass.length < 2) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }

@@ -3,9 +3,10 @@ package com.example.demo.util;
 import com.example.demo.dao.UserDAO;
 import com.example.demo.model.User;
 import org.springframework.util.StringUtils;
-import sun.misc.BASE64Decoder;
+
 
 import java.io.IOException;
+import java.util.Base64;
 
 public class CheckToken {
     public User checkToken(String token, UserDAO userDAO) throws IOException {
@@ -13,7 +14,7 @@ public class CheckToken {
             return null;
         }
 
-        String[] userAndPass = new String(new BASE64Decoder().decodeBuffer(token.split(" ")[1])).split(":");
+        String[] userAndPass = new String(Base64.getDecoder().decode(token.split(" ")[1])).split(":");
         if (userAndPass.length < 2) {
             return null;
         }
