@@ -5,7 +5,7 @@ files:
     destination: /home/ubuntu/app
 hooks:
   ApplicationStop:
-    - location: scripts/stopTask.sh
+    - location: scripts/applicationStop.sh
       runas: ubuntu
   BeforeInstall:
     - location: scripts/beforeInstall.sh
