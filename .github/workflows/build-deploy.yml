@@ -27,7 +27,6 @@ jobs:
       run: |
         echo "${{ env.ARTIFACT_NAME }}"
         pwd
-        ubuntu-latest
         mvn clean install
         pwd
         ls -al target
