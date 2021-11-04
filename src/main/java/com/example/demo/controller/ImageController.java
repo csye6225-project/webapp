@@ -9,7 +9,6 @@ import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
 import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
-import com.amazonaws.util.IOUtils;
 import com.example.demo.dao.ImageDAO;
 import com.example.demo.dao.UserDAO;
 import com.example.demo.model.Image;
@@ -23,7 +22,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
@@ -148,7 +146,7 @@ public class ImageController {
 
         S3Object object = s3.getObject(request);
         S3ObjectInputStream objectContent = object.getObjectContent();
-        IOUtils.copy(objectContent, new FileOutputStream("/Users/pengchengxu/Desktop/csye6225/screen.png"));
+//        IOUtils.copy(objectContent, new FileOutputStream("/Users/pengchengxu/Desktop/csye6225/screen.png"));
 
         return ResponseEntity.status(HttpStatus.OK).body(responseMap);
     }

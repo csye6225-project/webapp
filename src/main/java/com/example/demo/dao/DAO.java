@@ -6,16 +6,12 @@ import org.hibernate.SessionFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Repository;
 
-import javax.xml.ws.soap.Addressing;
 import java.io.IOException;
 import java.util.logging.Logger;
 
-@Repository
 public class DAO {
     private static final Logger log = Logger.getAnonymousLogger();
     private static final ThreadLocal session = new ThreadLocal();
-    @Autowired
-
     private static SessionFactory sessionFactory;
 
     static {
