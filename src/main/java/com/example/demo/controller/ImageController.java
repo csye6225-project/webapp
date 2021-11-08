@@ -60,7 +60,7 @@ public class ImageController {
         return responseMap;
     }
 
-    @PostMapping(value="/v1/user/self/pic")
+    @PostMapping(value="/v2/user/self/pic")
     public ResponseEntity<?> addOrUpdateImage(HttpEntity<byte[]> requestEntity,
                                               @RequestHeader("Authorization") String token,
                                               @RequestHeader("Content-Type") String type,
@@ -122,7 +122,7 @@ public class ImageController {
         }
     }
 
-    @GetMapping(value="/v1/user/self/pic")
+    @GetMapping(value="/v2/user/self/pic")
     public ResponseEntity<?> getImage (@RequestHeader("Authorization") String token,
                                               UserDAO userDAO, ImageDAO imageDAO) throws IOException {
         User user = new CheckToken().checkToken(token, userDAO);
@@ -151,7 +151,7 @@ public class ImageController {
         return ResponseEntity.status(HttpStatus.OK).body(responseMap);
     }
 
-    @DeleteMapping(value="/v1/user/self/pic")
+    @DeleteMapping(value="/v2/user/self/pic")
     public ResponseEntity<?> deleteImage (@RequestHeader("Authorization") String token,
                                                UserDAO userDAO, ImageDAO imageDAO) throws IOException {
         User user = new CheckToken().checkToken(token, userDAO);
