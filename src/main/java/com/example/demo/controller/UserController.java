@@ -31,7 +31,7 @@ public class UserController {
         return responseMap;
     }
 
-    @PostMapping(value="/v1/user", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value="/v2/user", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) throws IOException {
         if(userDAO.get(user.getUsername()) != null || !EmailValidator.isEmail(user.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
@@ -42,7 +42,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
-    @GetMapping(value="/v1/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
+    @GetMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> showUser(@RequestHeader(value="Authorization") String token, UserDAO userDAO) throws IOException {
         User user = new CheckToken().checkToken(token, userDAO);
         if (user == null) {
@@ -52,7 +52,7 @@ public class UserController {
         return ResponseEntity.status(HttpStatus.OK).body(responseMap);
     }
 
-    @PutMapping(value="/v1/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PutMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateUser(@RequestHeader(value="Authorization") String token, @RequestBody Map<String, Object> userMap,
                                         UserDAO userDAO) throws IOException{
         if (StringUtils.isEmpty(token)) {
