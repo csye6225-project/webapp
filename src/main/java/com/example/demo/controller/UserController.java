@@ -5,6 +5,8 @@ import com.example.demo.model.User;
 import com.example.demo.util.BCrypt;
 import com.example.demo.util.CheckToken;
 import com.example.demo.util.EmailValidator;
+import com.timgroup.statsd.StatsDClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -20,6 +22,17 @@ import java.util.Map;
 @RestController
 public class UserController {
 
+    @Autowired
+    private StatsDClient statsDClient;
+
+    private String postUserApi = "post.userRequest.api.timer";
+    private String getUserApi = "get.userRequest.api.timer";
+    private String putUserApi = "put.userRequest.api.timer";
+
+    private String postUserDB = "post.userRequest.db.timer";
+    private String getUserDB = "get.userRequest.db.timer";
+    private String putUserDB = "put.userRequest.db.timer";
+
     private Map<String, Object> showUserInfo(User user) {
         Map<String, Object> responseMap = new HashMap<String, Object>();
         responseMap.put("id", user.getId());
@@ -33,28 +46,54 @@ public class UserController {
 
     @PostMapping(value="/v2/user", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) throws IOException {
+        long postUserRequestStart = System.currentTimeMillis();
+        statsDClient.incrementCounter("post.userRequest.count");
+
         if(userDAO.get(user.getUsername()) != null || !EmailValidator.isEmail(user.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
+
+        long postUserDBStart = System.currentTimeMillis();
         User newUser = userDAO.create(user.getFirst_name(),user.getLast_name(),user.getPassword(),user.getUsername());
-        System.out.println(newUser.getUsername());
-        Map<String, Object> responseMap = showUserInfo(newUser);
+        long postUserDBEnd = System.currentTimeMillis();
+        statsDClient.recordExecutionTime(postUserDB, postUserDBEnd-postUserDBStart);
+
+//        Map<String, Object> responseMap = showUserInfo(newUser);
+
+        long postUserRequestEnd = System.currentTimeMillis();
+        statsDClient.recordExecutionTime(postUserApi, postUserRequestEnd-postUserRequestStart);
+
         return ResponseEntity.status(HttpStatus.CREATED).build();
     }
 
     @GetMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> showUser(@RequestHeader(value="Authorization") String token, UserDAO userDAO) throws IOException {
+        long getUserRequestStart = System.currentTimeMillis();
+        statsDClient.incrementCounter("get.userRequest.count");
+
+        long getUserDBStart = System.currentTimeMillis();
         User user = new CheckToken().checkToken(token, userDAO);
+        long getUserDBEnd = System.currentTimeMillis();
+        statsDClient.recordExecutionTime(getUserDB, getUserDBEnd-getUserDBStart);
+
         if (user == null) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
         Map<String, Object> responseMap = showUserInfo(user);
+
+        long getUserRequestEnd = System.currentTimeMillis();
+        statsDClient.recordExecutionTime(getUserApi, getUserRequestEnd-getUserRequestStart);
+
         return ResponseEntity.status(HttpStatus.OK).body(responseMap);
     }
 
     @PutMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> updateUser(@RequestHeader(value="Authorization") String token, @RequestBody Map<String, Object> userMap,
                                         UserDAO userDAO) throws IOException{
+
+        long putUserRequestStart = System.currentTimeMillis();
+        statsDClient.incrementCounter("put.userRequest.count");
+
         if (StringUtils.isEmpty(token)) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
@@ -84,7 +123,14 @@ public class UserController {
         String hashedPw = BCrypt.hashpw(userMap.get("password").toString(), BCrypt.gensalt());
         user1.setPassword(hashedPw);
 
+        long putUserDBStart = System.currentTimeMillis();
         userDAO.update(user1);
+        long putUserDBEnd = System.currentTimeMillis();
+        statsDClient.recordExecutionTime(putUserDB, putUserDBEnd-putUserDBStart);
+
+        long putUserRequestEnd = System.currentTimeMillis();
+        statsDClient.recordExecutionTime(putUserApi, putUserRequestEnd-putUserRequestStart);
+
         return ResponseEntity.status(HttpStatus.NO_CONTENT).build();
     }
 
