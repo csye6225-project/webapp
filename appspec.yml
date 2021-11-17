@@ -3,6 +3,9 @@ os: linux
 files:
   - source: /target/demo-0.0.1-SNAPSHOT.jar
     destination: /home/ubuntu/app
+  - source: ./config.json
+      destination: /home/ubuntu/app
+  file_exists_behavior: OVERWRITE
 hooks:
   ApplicationStop:
     - location: scripts/applicationStop.sh
