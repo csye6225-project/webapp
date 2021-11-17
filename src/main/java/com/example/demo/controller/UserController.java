@@ -49,7 +49,7 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
-    @PostMapping(value="/v2/user", produces = MediaType.APPLICATION_JSON_VALUE)
+    @PostMapping(value="/v1/user", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) throws IOException {
         long postUserRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("post.userRequest.count");
