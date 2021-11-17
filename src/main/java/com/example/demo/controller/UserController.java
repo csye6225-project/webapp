@@ -44,6 +44,11 @@ public class UserController {
         return responseMap;
     }
 
+    @RequestMapping("/123")
+    public ResponseEntity<?> checkHealth() {
+        return ResponseEntity.ok().build();
+    }
+
     @PostMapping(value="/v2/user", produces = MediaType.APPLICATION_JSON_VALUE)
     public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) throws IOException {
         long postUserRequestStart = System.currentTimeMillis();
