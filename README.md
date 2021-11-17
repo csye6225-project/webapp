@@ -9,5 +9,3 @@
 
 ##Start the application with
 ```DemoApplication.java```
-
-final edition of assign 5
