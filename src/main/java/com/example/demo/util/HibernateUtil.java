@@ -16,9 +16,9 @@ public class HibernateUtil {
         Configuration config = new Configuration();
         Properties properties = new Properties();
         HibernateUtil.class.getClassLoader();
-        //FileInputStream fis = new FileInputStream("/home/ubuntu/app/application.properties");
-        File file = ResourceUtils.getFile("classpath:application.properties");
-        FileInputStream fis = new FileInputStream(file);
+        FileInputStream fis = new FileInputStream("/home/ubuntu/app/application.properties");
+//        File file = ResourceUtils.getFile("classpath:application.properties");
+//        FileInputStream fis = new FileInputStream(file);
         properties.load(fis);
 
         config.mergeProperties(properties).configure("hibernate.cfg.xml");
