@@ -1,13 +1,7 @@
 package com.example.demo.controller;
 
 import com.amazonaws.AmazonServiceException;
-import com.amazonaws.ClientConfiguration;
-import com.amazonaws.auth.AWSCredentials;
-import com.amazonaws.auth.AWSCredentialsProvider;
-import com.amazonaws.auth.AWSStaticCredentialsProvider;
-import com.amazonaws.auth.BasicAWSCredentials;
 import com.amazonaws.services.s3.AmazonS3;
-import com.amazonaws.services.s3.AmazonS3Client;
 import com.amazonaws.services.s3.model.*;
 import com.example.demo.dao.ImageDAO;
 import com.example.demo.dao.UserDAO;
@@ -16,14 +10,13 @@ import com.example.demo.model.User;
 import com.example.demo.util.CheckToken;
 import com.timgroup.statsd.StatsDClient;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.ByteArrayInputStream;
-import java.io.IOException;
 import java.io.InputStream;
 import java.text.SimpleDateFormat;
 import java.util.Date;
@@ -32,11 +25,18 @@ import java.util.Map;
 
 @RestController
 public class ImageController {
-
     @Autowired
-    public Environment env;
+    UserDAO userDAO;
+    @Autowired
+    ImageDAO imageDAO;
+    @Autowired
+    private AmazonS3 s3;
     @Autowired
     private StatsDClient statsDClient;
+
+    @Value("${aws.s3.bucket}")
+    private String s3Bucket;
+
 
     private String postImageApi = "post.imageRequest.api.timer";
     private String getImageApi = "get.imageRequest.api.timer";
@@ -50,20 +50,6 @@ public class ImageController {
     private String getImageS3 = "get.imageRequest.s3.timer";
     private String deleteImageS3 = "delete.imageRequest.s3.timer";
 
-    private AmazonS3 Bucket() {
-        ClientConfiguration config = new ClientConfiguration();
-        AWSCredentials awsCredentials = new BasicAWSCredentials(env.getProperty("aws.access_key_id"),
-                env.getProperty("aws.secret_access_key"));
-        AWSCredentialsProvider awsCredentialsProvider = new AWSStaticCredentialsProvider(awsCredentials);
-
-        AmazonS3 s3 = AmazonS3Client.builder()
-                .withClientConfiguration(config)
-                .withCredentials(awsCredentialsProvider)
-                .disableChunkedEncoding()
-                .withPathStyleAccessEnabled(true).withRegion(env.getProperty("aws.s3.region"))
-                .build();
-        return s3;
-    }
 
     private Map<String, Object> showImageInfo(Image image) {
         Map<String, Object> responseMap = new HashMap<String, Object>();
@@ -78,8 +64,7 @@ public class ImageController {
     @PostMapping(value="/v2/user/self/pic")
     public ResponseEntity<?> addOrUpdateImage(HttpEntity<byte[]> requestEntity,
                                               @RequestHeader("Authorization") String token,
-                                              @RequestHeader("Content-Type") String type,
-                                              UserDAO userDAO, ImageDAO imageDAO) throws IOException {
+                                              @RequestHeader("Content-Type") String type) {
 
         long postImageRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("post.imageRequest.count");
@@ -97,7 +82,7 @@ public class ImageController {
         String date = new SimpleDateFormat("yyyy/MM/dd").format(new Date());
         String userId = user.getId();
         String filepath = userId + "/" + filename;
-        String bucket = env.getProperty("aws.s3.bucket");
+        String bucket = s3Bucket;
         System.out.println(bucket);
 
         ObjectMetadata objectMetadata = new ObjectMetadata();
@@ -107,7 +92,6 @@ public class ImageController {
 
         if (imageDAO.getImage(userId) == null) {
             long postImageS3Start = System.currentTimeMillis();
-            AmazonS3 s3 = Bucket();
             try {
                 s3.putObject(bucket, filepath, fis, objectMetadata);
                 long postImageS3End = System.currentTimeMillis();
@@ -135,12 +119,10 @@ public class ImageController {
 
             return ResponseEntity.status(HttpStatus.CREATED).body(responseMap);
         } else {
-            Image image = imageDAO.getImage(userId);
+            Image image = imageDAO.getImage1(userId);
             long postImageS3Start1 = System.currentTimeMillis();
-            AmazonS3 s3 = Bucket();
 
             try {
-
                 s3.putObject(bucket, filepath, fis, objectMetadata);
                 long postImageS3End1 = System.currentTimeMillis();
                 statsDClient.recordExecutionTime(postImageS3, postImageS3End1-postImageS3Start1);
@@ -160,8 +142,7 @@ public class ImageController {
     }
 
     @GetMapping(value="/v2/user/self/pic")
-    public ResponseEntity<?> getImage (@RequestHeader("Authorization") String token,
-                                              UserDAO userDAO, ImageDAO imageDAO) throws IOException {
+    public ResponseEntity<?> getImage (@RequestHeader("Authorization") String token) {
 
         long getImageRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("get.imageRequest.count");
@@ -183,7 +164,6 @@ public class ImageController {
         Map<String, Object> responseMap = showImageInfo(image);
 
         long getImageS3Start = System.currentTimeMillis();
-        AmazonS3 s3 = Bucket();
         String url = image.getUrl();
         String bucket = url.split("/")[0];
         String filepath = url.split("/")[1] + "/" + url.split("/")[2];
@@ -202,8 +182,7 @@ public class ImageController {
     }
 
     @DeleteMapping(value="/v2/user/self/pic")
-    public ResponseEntity<?> deleteImage (@RequestHeader("Authorization") String token,
-                                               UserDAO userDAO, ImageDAO imageDAO) throws IOException {
+    public ResponseEntity<?> deleteImage (@RequestHeader("Authorization") String token) {
         long deleteImageRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("delete.imageRequest.count");
 
@@ -212,14 +191,12 @@ public class ImageController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
-        Image image = imageDAO.getImage(user.getId());
+        Image image = imageDAO.getImage1(user.getId());
         if (image == null) {
             return ResponseEntity.status(HttpStatus.NOT_FOUND).build();
         }
 
-        Map<String, Object> responseMap = showImageInfo(image);
         long deleteImageS3Start = System.currentTimeMillis();
-        AmazonS3 s3 = Bucket();
         String url = image.getUrl();
         String bucket = url.split("/")[0];
         String filepath = url.split("/")[1] + "/" + url.split("/")[2];

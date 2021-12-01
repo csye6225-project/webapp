@@ -4,17 +4,16 @@ import com.example.demo.dao.UserDAO;
 import com.example.demo.model.User;
 import org.springframework.util.StringUtils;
 
-
-import java.io.IOException;
 import java.util.Base64;
 
 public class CheckToken {
-    public User checkToken(String token, UserDAO userDAO) throws IOException {
+    public User checkToken(String token, UserDAO userDAO) {
         if (StringUtils.isEmpty(token)) {
             return null;
         }
 
         String[] userAndPass = new String(Base64.getDecoder().decode(token.split(" ")[1])).split(":");
+        System.out.println(userAndPass[0]);
         if (userAndPass.length < 2) {
             return null;
         }
