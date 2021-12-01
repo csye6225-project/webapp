@@ -1,5 +1,14 @@
 package com.example.demo.controller;
 
+import com.amazonaws.services.dynamodbv2.AmazonDynamoDB;
+import com.amazonaws.services.dynamodbv2.document.DynamoDB;
+import com.amazonaws.services.dynamodbv2.document.Item;
+import com.amazonaws.services.dynamodbv2.document.PutItemOutcome;
+import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
+import com.amazonaws.services.sns.AmazonSNS;
+import com.amazonaws.services.sns.model.MessageAttributeValue;
+import com.amazonaws.services.sns.model.PublishRequest;
 import com.example.demo.dao.UserDAO;
 import com.example.demo.model.User;
 import com.example.demo.util.BCrypt;
@@ -7,6 +16,7 @@ import com.example.demo.util.CheckToken;
 import com.example.demo.util.EmailValidator;
 import com.timgroup.statsd.StatsDClient;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
@@ -14,16 +24,27 @@ import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
 import java.io.IOException;
-import java.util.Base64;
-import java.util.HashMap;
-import java.util.Map;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 
 @RestController
 public class UserController {
-
+    @Autowired
+    UserDAO userDAO;
     @Autowired
     private StatsDClient statsDClient;
+    @Autowired
+    private AmazonDynamoDB amazonDynamoDB;
+    @Autowired
+    private AmazonSNS amazonSNS;
+
+    @Value("${aws.sns.arn}")
+    private String topicArn;
 
     private String postUserApi = "post.userRequest.api.timer";
     private String getUserApi = "get.userRequest.api.timer";
@@ -41,6 +62,8 @@ public class UserController {
         responseMap.put("username", user.getUsername());
         responseMap.put("account_created", user.getAccount_created());
         responseMap.put("account_updated", user.getAccount_updated());
+        responseMap.put("verified", user.getVerified());
+        responseMap.put("verified_on", user.getVerified_on());
         return responseMap;
     }
 
@@ -49,8 +72,44 @@ public class UserController {
         return ResponseEntity.ok().build();
     }
 
+    @RequestMapping("/v1/verifyUserEmail")
+    public ResponseEntity<?> verifyEmail(@RequestParam String email,
+                                         @RequestParam String token) {
+        DynamoDB dynamoDB = new DynamoDB(amazonDynamoDB);
+        Table table = dynamoDB.getTable("verification");
+
+        GetItemSpec spec = new GetItemSpec().withPrimaryKey("email", email);
+
+        try {
+            System.out.println("Attempting to read the item...");
+            Item outcome = table.getItem(spec);
+            System.out.println("GetItem succeeded: " + outcome);
+
+            if (outcome == null) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+            } else {
+                String verify = outcome.getString("token");
+                if (verify == token) {
+                    User user = userDAO.get1(email);
+                    user.setVerified(true);
+                    Date now = new Date();
+                    DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss'Z'");
+                    user.setVerified_on(format.format(now));
+                    userDAO.update(user);
+                    return ResponseEntity.status(HttpStatus.OK).build();
+                } else {
+                    return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Unable to read item");
+            System.err.println(e.getMessage());
+        }
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+    }
+
     @PostMapping(value="/v2/user", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> addUser(@RequestBody User user, UserDAO userDAO) throws IOException {
+    public ResponseEntity<?> addUser(@RequestBody User user) {
         long postUserRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("post.userRequest.count");
 
@@ -59,11 +118,53 @@ public class UserController {
         }
 
         long postUserDBStart = System.currentTimeMillis();
+
+        DynamoDB client = new DynamoDB(amazonDynamoDB);
+        Table table = client.getTable("verification");
+        long exptime = System.currentTimeMillis() / 1000L;
+
+        String str = "qwertyuiopasdfghjklzxcvbnmQWERTYUIOPASDFGHJKLZXCVBNM1234567890";
+        Random random = new Random();
+        StringBuffer stringBuffer = new StringBuffer();
+        for (int i = 0; i < 13; i++) {
+            int number = random.nextInt(62);
+            stringBuffer.append(str.charAt(number));
+        }
+
+        String t = stringBuffer.toString();
+
+        try {
+            System.out.println("Adding a new verification");
+            Item item = new Item().withPrimaryKey("email", user.getUsername())
+                    .withString("token", t)
+                    .withLong("expireTime", exptime + 60);
+            PutItemOutcome outcome = table.putItem(item);
+        } catch (Exception e) {
+            System.out.println("Failed to add item");
+            System.out.println(e.getMessage());
+        }
+
+        try {
+            String message = user.getUsername() + ";" + t;
+//            Map<String, MessageAttributeValue> attributes = new HashMap<>();
+//            attributes.put("Email", new MessageAttributeValue()
+//                    .withDataType("String").withStringValue(user.getUsername()));
+//            attributes.put("Token", new MessageAttributeValue()
+//                    .withDataType("String").withStringValue(t));
+
+            PublishRequest request = new PublishRequest()
+                    .withTopicArn(topicArn)
+                    .withMessage(message);
+//                    .withMessageAttributes(attributes);
+            amazonSNS.publish(request);
+        } catch (Exception e) {
+            System.out.println("Failed to publish message");
+            System.out.println(e.getMessage());
+        }
+
         User newUser = userDAO.create(user.getFirst_name(),user.getLast_name(),user.getPassword(),user.getUsername());
         long postUserDBEnd = System.currentTimeMillis();
         statsDClient.recordExecutionTime(postUserDB, postUserDBEnd-postUserDBStart);
-
-//        Map<String, Object> responseMap = showUserInfo(newUser);
 
         long postUserRequestEnd = System.currentTimeMillis();
         statsDClient.recordExecutionTime(postUserApi, postUserRequestEnd-postUserRequestStart);
@@ -72,7 +173,7 @@ public class UserController {
     }
 
     @GetMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> showUser(@RequestHeader(value="Authorization") String token, UserDAO userDAO) throws IOException {
+    public ResponseEntity<?> showUser(@RequestHeader(value="Authorization") String token) {
         long getUserRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("get.userRequest.count");
 
@@ -93,8 +194,8 @@ public class UserController {
     }
 
     @PutMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
-    public ResponseEntity<?> updateUser(@RequestHeader(value="Authorization") String token, @RequestBody Map<String, Object> userMap,
-                                        UserDAO userDAO) throws IOException{
+    public ResponseEntity<?> updateUser(@RequestHeader(value="Authorization") String token,
+                                        @RequestBody Map<String, Object> userMap){
 
         long putUserRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("put.userRequest.count");
@@ -113,7 +214,7 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
-        User user1 = userDAO.get(name);
+        User user1 = userDAO.get1(name);
         if (user1 == null || !BCrypt.checkpw(userAndPass[1],user1.getPassword())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
