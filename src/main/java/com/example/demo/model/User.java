@@ -19,6 +19,10 @@ public class User {
     private String account_created;
     @Column(name="account_updated")
     private String account_updated;
+    @Column(name="verified")
+    private Boolean verified;
+    @Column(name="verified_on")
+    private String verified_on;
 
     public User() {
     }
@@ -77,5 +81,21 @@ public class User {
 
     public void setAccount_updated(String account_updated) {
         this.account_updated = account_updated;
+    }
+
+    public Boolean getVerified() {
+        return verified;
+    }
+
+    public void setVerified(Boolean verified) {
+        this.verified = verified;
+    }
+
+    public String getVerified_on() {
+        return verified_on;
+    }
+
+    public void setVerified_on(String verified_on) {
+        this.verified_on = verified_on;
     }
 }
