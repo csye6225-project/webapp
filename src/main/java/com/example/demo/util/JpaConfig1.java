@@ -32,7 +32,9 @@ public class JpaConfig1 {
     @Primary
     LocalContainerEntityManagerFactoryBean lcemfb1(EntityManagerFactoryBuilder builder) {
         Map<String, String> properties = jp.getProperties();
+        System.out.println(properties.keySet());
         properties.put("hibernate.hbm2ddl.auto", "update");
+        System.out.println(properties.keySet());
         return builder.dataSource(ds1)
                 .properties(properties)
                 .packages("com.example.demo.model")
