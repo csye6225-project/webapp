@@ -1,7 +1,5 @@
 package com.example.demo.util;
 
-
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.autoconfigure.orm.jpa.JpaProperties;
@@ -16,6 +14,8 @@ import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
+import java.util.Map;
+import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
@@ -32,8 +32,10 @@ public class JpaConfig1 {
     @Bean
     @Primary
     LocalContainerEntityManagerFactoryBean lcemfb1(EntityManagerFactoryBuilder builder) {
+        Map<String, String> properties = jp.getProperties();
+        properties.put("hibernate.hbm2ddl.auto", "update");
         return builder.dataSource(ds1)
-                .properties(jp.getProperties())
+                .properties(properties)
                 .packages("com.example.demo.model")
                 .build();
     }
@@ -41,7 +43,7 @@ public class JpaConfig1 {
     @Bean
     @Primary
     PlatformTransactionManager ptm1(EntityManagerFactoryBuilder builder) {
-        LocalContainerEntityManagerFactoryBean lcemfb = lcemfb1(builder);
-        return new JpaTransactionManager(lcemfb.getObject());
+        LocalContainerEntityManagerFactoryBean l1 = lcemfb1(builder);
+        return new JpaTransactionManager(l1.getObject());
     }
 }
