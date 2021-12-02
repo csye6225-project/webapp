@@ -34,7 +34,7 @@ public class JpaConfig1 {
         Map<String, String> properties = jp.getProperties();
         properties.put("spring.jpa.hibernate.hbm2ddl.auto", "update");
         return builder.dataSource(ds1)
-                .properties(jp.getProperties())
+                .properties(properties)
                 .packages("com.example.demo.model")
                 .build();
     }
