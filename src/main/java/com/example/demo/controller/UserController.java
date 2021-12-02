@@ -5,9 +5,9 @@ import com.amazonaws.services.dynamodbv2.document.DynamoDB;
 import com.amazonaws.services.dynamodbv2.document.Item;
 import com.amazonaws.services.dynamodbv2.document.PutItemOutcome;
 import com.amazonaws.services.dynamodbv2.document.Table;
+import com.amazonaws.services.dynamodbv2.document.spec.DeleteItemSpec;
 import com.amazonaws.services.dynamodbv2.document.spec.GetItemSpec;
 import com.amazonaws.services.sns.AmazonSNS;
-import com.amazonaws.services.sns.model.MessageAttributeValue;
 import com.amazonaws.services.sns.model.PublishRequest;
 import com.example.demo.dao.UserDAO;
 import com.example.demo.model.User;
@@ -23,10 +23,6 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;
 import java.util.*;
@@ -80,24 +76,36 @@ public class UserController {
 
         GetItemSpec spec = new GetItemSpec().withPrimaryKey("email", email);
 
+        DeleteItemSpec deleteItemSpec = new DeleteItemSpec()
+                .withPrimaryKey("email", email);
+
         try {
             System.out.println("Attempting to read the item...");
             Item outcome = table.getItem(spec);
             System.out.println("GetItem succeeded: " + outcome);
 
             if (outcome == null) {
+                System.out.println("Outcome is null");
                 return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
             } else {
                 String verify = outcome.getString("token");
-                if (verify == token) {
+                System.out.println(verify);
+                if (Objects.equals(verify, token)) {
                     User user = userDAO.get1(email);
                     user.setVerified(true);
                     Date now = new Date();
                     DateFormat format = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss.sss'Z'");
                     user.setVerified_on(format.format(now));
                     userDAO.update(user);
+                    System.out.println("Successfully Verified");
+
+                    System.out.println("Attempting a conditional delete...");
+                    table.deleteItem(deleteItemSpec);
+                    System.out.println("DeleteItem succeeded");
+
                     return ResponseEntity.status(HttpStatus.OK).build();
                 } else {
+                    System.out.println("Unable to verify user");
                     return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
                 }
             }
@@ -113,7 +121,7 @@ public class UserController {
         long postUserRequestStart = System.currentTimeMillis();
         statsDClient.incrementCounter("post.userRequest.count");
 
-        if(userDAO.get(user.getUsername()) != null || !EmailValidator.isEmail(user.getUsername())) {
+        if(userDAO.get1(user.getUsername()) != null || !EmailValidator.isEmail(user.getUsername())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
         }
 
@@ -137,7 +145,8 @@ public class UserController {
             System.out.println("Adding a new verification");
             Item item = new Item().withPrimaryKey("email", user.getUsername())
                     .withString("token", t)
-                    .withLong("expireTime", exptime + 60);
+                    .withLong("expireTime", exptime + 60)
+                    .withBoolean("isSend", false);
             PutItemOutcome outcome = table.putItem(item);
         } catch (Exception e) {
             System.out.println("Failed to add item");
