@@ -28,7 +28,7 @@ jobs:
         echo "${{ env.ARTIFACT_NAME }}"
         pwd
         mvn clean 
-        mvn package assembly:single
+        mvn package assembly:single -Dmaven.test.skip=true
         pwd
         ls -al target
 
