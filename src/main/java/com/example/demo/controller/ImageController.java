@@ -74,6 +74,10 @@ public class ImageController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
+        if (!user.getVerified()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         byte[] file = requestEntity.getBody();
         InputStream fis = new ByteArrayInputStream(file);
 
@@ -152,6 +156,10 @@ public class ImageController {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
+        if (!user.getVerified()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         long getImageDBStart = System.currentTimeMillis();
         Image image = imageDAO.getImage(user.getId());
         long getImageDBEnd = System.currentTimeMillis();
@@ -188,6 +196,10 @@ public class ImageController {
 
         User user = new CheckToken().checkToken(token, userDAO);
         if (user == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
+        if (!user.getVerified()) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 

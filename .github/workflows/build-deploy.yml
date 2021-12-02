@@ -28,7 +28,7 @@ jobs:
         echo "${{ env.ARTIFACT_NAME }}"
         pwd
         mvn clean 
-        mvn -B package --file pom.xml
+        mvn package assembly:single
         pwd
         ls -al target
 
