@@ -15,7 +15,6 @@ import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.sql.DataSource;
 import java.util.Map;
-import java.util.Properties;
 
 @Configuration
 @EnableTransactionManagement
@@ -32,10 +31,10 @@ public class JpaConfig1 {
     @Bean
     @Primary
     LocalContainerEntityManagerFactoryBean lcemfb1(EntityManagerFactoryBuilder builder) {
-        Map<String, String> properties = jp.getProperties();
+//        Map<String, String> properties = jp.getProperties();
 //        properties.put("spring.jpa.hibernate.hbm2ddl.auto", "update");
         return builder.dataSource(ds1)
-                .properties(properties)
+                .properties(jp.getProperties())
                 .packages("com.example.demo.model")
                 .build();
     }
