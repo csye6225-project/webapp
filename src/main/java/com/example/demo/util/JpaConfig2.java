@@ -36,7 +36,7 @@ public class JpaConfig2 {
 
     @Bean
     PlatformTransactionManager ptm2(EntityManagerFactoryBuilder builder) {
-        LocalContainerEntityManagerFactoryBean lcemfb = lcemfb2(builder);
-        return new JpaTransactionManager(lcemfb.getObject());
+        LocalContainerEntityManagerFactoryBean l2 = lcemfb2(builder);
+        return new JpaTransactionManager(l2.getObject());
     }
 }
