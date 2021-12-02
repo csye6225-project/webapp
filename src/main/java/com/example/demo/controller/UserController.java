@@ -196,6 +196,10 @@ public class UserController {
         }
         Map<String, Object> responseMap = showUserInfo(user);
 
+        if (!user.getVerified()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+
         long getUserRequestEnd = System.currentTimeMillis();
         statsDClient.recordExecutionTime(getUserApi, getUserRequestEnd-getUserRequestStart);
 
@@ -226,6 +230,10 @@ public class UserController {
         User user1 = userDAO.get1(name);
         if (user1 == null || !BCrypt.checkpw(userAndPass[1],user1.getPassword())) {
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).build();
+        }
+
+        if (!user1.getVerified()) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
 
         if (userMap.size() != 4 || userMap.get("first_name") == null ||
