@@ -18,7 +18,7 @@ public class CheckToken {
             return null;
         }
 
-        User user = userDAO.get(userAndPass[0]);
+        User user = userDAO.get1(userAndPass[0]);
         if (user == null || !BCrypt.checkpw(userAndPass[1],user.getPassword())) {
             return null;
         }
