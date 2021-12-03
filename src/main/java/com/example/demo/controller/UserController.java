@@ -155,16 +155,10 @@ public class UserController {
 
         try {
             String message = user.getUsername() + ";" + t;
-//            Map<String, MessageAttributeValue> attributes = new HashMap<>();
-//            attributes.put("Email", new MessageAttributeValue()
-//                    .withDataType("String").withStringValue(user.getUsername()));
-//            attributes.put("Token", new MessageAttributeValue()
-//                    .withDataType("String").withStringValue(t));
 
             PublishRequest request = new PublishRequest()
                     .withTopicArn(topicArn)
                     .withMessage(message);
-//                    .withMessageAttributes(attributes);
             amazonSNS.publish(request);
         } catch (Exception e) {
             System.out.println("Failed to publish message");
@@ -178,7 +172,9 @@ public class UserController {
         long postUserRequestEnd = System.currentTimeMillis();
         statsDClient.recordExecutionTime(postUserApi, postUserRequestEnd-postUserRequestStart);
 
-        return ResponseEntity.status(HttpStatus.CREATED).build();
+        Map<String, Object> responseMap = showUserInfo(newUser);
+
+        return ResponseEntity.status(HttpStatus.CREATED).body(responseMap);
     }
 
     @GetMapping(value="/v2/user/self", produces = MediaType.APPLICATION_JSON_VALUE)
