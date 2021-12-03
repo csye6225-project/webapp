@@ -145,7 +145,7 @@ public class UserController {
             System.out.println("Adding a new verification");
             Item item = new Item().withPrimaryKey("email", user.getUsername())
                     .withString("token", t)
-                    .withLong("expireTime", exptime + 60)
+                    .withLong("expireTime", exptime + 300)
                     .withBoolean("isSend", false);
             PutItemOutcome outcome = table.putItem(item);
         } catch (Exception e) {
@@ -155,7 +155,6 @@ public class UserController {
 
         try {
             String message = user.getUsername() + ";" + t;
-
             PublishRequest request = new PublishRequest()
                     .withTopicArn(topicArn)
                     .withMessage(message);
