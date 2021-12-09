@@ -17,11 +17,11 @@ public class DynamoDBConfig {
 
     @Bean
     public AmazonDynamoDB amazonDynamoDB() {
-        AWSCredentials awsCredentials = new BasicAWSCredentials("AKIAVMPSPWKHQKFZLVPL",
-                "FpCY9r1lswGZpy/8qQDE9PWznk6d3haDx0Bw2dCY");
+//        AWSCredentials awsCredentials = new BasicAWSCredentials("AKIAVMPSPWKHQKFZLVPL",
+//                "FpCY9r1lswGZpy/8qQDE9PWznk6d3haDx0Bw2dCY");
         AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
                 .withRegion(region)
-                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
+//                .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
                 .build();
 
         return amazonDynamoDB;
