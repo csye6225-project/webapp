@@ -17,8 +17,8 @@ public class DynamoDBConfig {
 
     @Bean
     public AmazonDynamoDB amazonDynamoDB() {
-        AWSCredentials awsCredentials = new BasicAWSCredentials(System.getProperty("aws.access_key_id"),
-                System.getProperty("aws.secret_access_key"));
+        AWSCredentials awsCredentials = new BasicAWSCredentials("AKIAVMPSPWKHQKFZLVPL",
+                "FpCY9r1lswGZpy/8qQDE9PWznk6d3haDx0Bw2dCY");
         AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
                 .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))

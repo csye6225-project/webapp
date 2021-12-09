@@ -16,8 +16,8 @@ public class SnsConfig {
 
     @Bean
     public AmazonSNS amazonSNS() {
-        AWSCredentials awsCredentials = new BasicAWSCredentials(System.getProperty("aws.access_key_id"),
-                System.getProperty("aws.secret_access_key"));
+        AWSCredentials awsCredentials = new BasicAWSCredentials("AKIAVMPSPWKHQKFZLVPL",
+                "FpCY9r1lswGZpy/8qQDE9PWznk6d3haDx0Bw2dCY");
         AmazonSNS amazonSNS = AmazonSNSClient.builder()
                 .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))

@@ -65,6 +65,7 @@ public class UserController {
 
     @RequestMapping("/123")
     public ResponseEntity<?> checkHealth() {
+        System.out.println(System.getProperty("aws.access_key_id"));
         return ResponseEntity.ok().build();
     }
 
