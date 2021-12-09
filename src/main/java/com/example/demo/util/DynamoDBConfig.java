@@ -12,17 +12,13 @@ import org.springframework.context.annotation.Configuration;
 
 @Configuration
 public class DynamoDBConfig {
-    @Value("${aws.access_key_id}")
-    private String accessKey;
-    @Value("${aws.secret_access_key}")
-    private String secretKey;
     @Value("${aws.region}")
     private String region;
 
     @Bean
     public AmazonDynamoDB amazonDynamoDB() {
-        AWSCredentials awsCredentials = new BasicAWSCredentials(accessKey,
-                secretKey);
+        AWSCredentials awsCredentials = new BasicAWSCredentials(System.getProperty("aws.access_key_id"),
+                System.getProperty("aws.secret_access_key"));
         AmazonDynamoDB amazonDynamoDB = AmazonDynamoDBClientBuilder.standard()
                 .withRegion(region)
                 .withCredentials(new AWSStaticCredentialsProvider(awsCredentials))
